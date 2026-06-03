@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robot + ElevenLabs</title>
+
+<style>
+body{
+    margin:0;
+    background:#0b131a;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    font-family:Arial,sans-serif;
+}
+
+.container{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:90px;
+}
+
+/* CARA */
+
+.rostro{
+    width:240px;
+    height:120px;
+    position:relative;
+}
+
+.ojo{
+    position:absolute;
+    width:32px;
+    height:32px;
+    background:#00f2fe;
+    border-radius:50%;
+    top:20px;
+    box-shadow:0 0 15px #00f2fe;
+    transition:.4s;
+}
+
+.izq{
+    left:45px;
+}
+
+.der{
+    right:45px;
+}
+
+.ojo::after{
+    content:"";
+    position:absolute;
+    width:8px;
+    height:8px;
+    background:white;
+    border-radius:50%;
+    top:6px;
+    left:6px;
+    transition:.4s;
+}
+
+.boca{
+    position:absolute;
+    left:50%;
+    bottom:15px;
+    transform:translateX(-50%);
+    width:45px;
+    height:22px;
+    background:#00f2fe;
+    border-radius:0 0 30px 30px;
+    box-shadow:0 0 12px #00f2fe;
+    transition:.4s;
+}
+
+/* TRISTE */
+
+.rostro.triste .ojo{
+    width:30px;
+    height:10px;
+    top:30px;
+    border-radius:0 0 20px 20px;
+}
+
+.rostro.triste .izq{
+    transform:rotate(-12deg);
+}
+
+.rostro.triste .der{
+    transform:rotate(12deg);
+}
+
+.rostro.triste .ojo::after{
+    opacity:0;
+}
+
+.rostro.triste .boca{
+    width:38px;
+    height:18px;
+    background:transparent;
+    border-top:4px solid #00f2fe;
+    border-radius:25px 25px 0 0;
+    box-shadow:none;
+}
+
+/* WIDGET */
+
+.agent-box{
+    transform:scale(0.65);
+    transform-origin:center top;
+    margin-top:-30px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="rostro triste" id="robot">
+        <div class="ojo izq"></div>
+        <div class="ojo der"></div>
+        <div class="boca"></div>
+    </div>
+
+    <div class="agent-box">
+        <elevenlabs-convai
+            agent-id="agent_5601kq5cjhp7e8sss5yg6vmadefk">
+        </elevenlabs-convai>
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async></script>
+
+<script>
+const robot = document.getElementById("robot");
+
+navigator.mediaDevices.getUserMedia({audio:true})
+.then(stream => {
+
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    const microphone = audioContext.createMediaStreamSource(stream);
+
+    analyser.fftSize = 256;
+    microphone.connect(analyser);
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    function animar(){
+
+        analyser.getByteFrequencyData(dataArray);
+
+        let suma = 0;
+
+        for(let i = 0; i < dataArray.length; i++){
+            suma += dataArray[i];
+        }
+
+        const volumen = suma / dataArray.length;
+
+        if(volumen > 12){
+            robot.classList.remove("triste");
+        }else{
+            robot.classList.add("triste");
+        }
+
+        requestAnimationFrame(animar);
+    }
+
+    animar();
+})
+.catch(error => {
+    console.log(error);
+});
+</script>
+
+</body>
+</html>
